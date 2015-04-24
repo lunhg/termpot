@@ -121,7 +121,9 @@ $(document).ready(function(){
 		if(args[0] === "help"){
 		    var msg = ""
 		    if(args[1] === undefined){
-			msg = "8 comandos:\n"+
+			msg = "adicionalmente é possível digitar\n"+
+			"  help [comando]"+
+			"comandos:\n"+
 			"  play: toca\n"+
 			"  stop: para\n"+
 			"  pause: para\n"+

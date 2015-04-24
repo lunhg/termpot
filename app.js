@@ -1,7 +1,10 @@
 $(document).ready(function(){
     // Inicializações do sistema
+    var d = new Date()
+    var s = d.format("dd/m/yy hh:mm:ss");
     $("#terminal").Ptty({
-	theme: "fallout"
+	theme: "fallout",
+	welcome: "..........................................\n. Virtual machine started at             .\n. "+d+".\n. type <emph>help</emph> for instructions             .\n.........................................."
     })
 
     // a máquina de áudio

@@ -122,7 +122,7 @@ $(document).ready(function(){
 		    var msg = ""
 		    if(args[1] === undefined){
 			msg = "adicionalmente é possível digitar\n"+
-			"  help [comando]"+
+			"  help [comando]\n"+
 			"comandos:\n"+
 			"  play: toca\n"+
 			"  stop: para\n"+

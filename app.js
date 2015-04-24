@@ -80,7 +80,7 @@ $(document).ready(function(){
 	    try{
 		runtime = new window.WavepotRuntime(null, bufferSize, channels)
                 runtime.init() 
-		return "=======================\nsintetizador de sample a sample\n=======================\namostragem="+runtime.context.sampleRate+"\ncanais="+runtime.channels+"\ntamanho do buffer ="+runtime.bufferSize
+		return "..................................\n. sintetizador de sample a sample. \n. amostragem: "+runtime.context.sampleRate+"              .\n. canais: "+runtime.channels+"                      .\n. buffer: "+runtime.bufferSize+"                   .\n.................................."
 	    }
 	    catch(e){
 		return e.toString()

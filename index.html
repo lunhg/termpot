@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html>
 <head>
 <link rel="stylesheet" href="Ptty.css"></link>
@@ -7,9 +8,76 @@
 <script src="wavepot-runtime.js"></script>
 <script src="recorderWorker.js"></script>
 <script src="dateFormat.js"></script>
+<script src="CoffeeScript.js"></script>
+<style>
+#about {
+    position: fixed;
+    top: 0px;
+    left: 0px;
+    background-color: white;
+    color: black;
+    border: 1px solid;
+    width: 100%;
+    opacity:0.6;
+}
+#sidebar {
+    position: fixed;
+    top: 20px;
+    right: 0px;
+    background-color: white;
+    color: black;
+    border: 1px solid;
+    width: 20%;
+    height: 100%;
+    opacity:0.6;
+}
+</style>
+
+<script>
+function load(page, element){
+   var req = null; 
+   document.getElementById(element).innerHTML="Started...";
+   if (window.XMLHttpRequest){
+      req = new XMLHttpRequest();
+      if (req.overrideMimeType){
+         req.overrideMimeType('text/xml');
+      }
+   } 
+   else if (window.ActiveXObject) {
+      try {
+         req = new ActiveXObject("Msxml2.XMLHTTP");
+      } catch (e){
+         try {
+            req = new ActiveXObject("Microsoft.XMLHTTP");
+         } catch (e) {}
+      }
+}
+
+
+   req.onreadystatechange = function(){ 
+      document.getElementById(element).innerHTML="Wait server...";
+      if(req.readyState == 4){
+         if(req.status == 200){
+            document.getElementById(element).innerHTML= req.responseText;   
+         }
+         else{
+            document.getElementById(element).innerHTML="Erro:" + req.status + " " + req.statusText;
+         }   
+      } 
+   }; 
+   req.open("GET", page, true); 
+   req.send(null); 
+}
+</script>
 </head>
 <body>
 <script src="app.js"></script>
+<div id="about">
+<a onclick="load('README.md', 'sidebar');">About</a> | Help | Tutorials | Authors | ...
+</div>
 <div id="terminal"></div>
+<div id="sidebar">
+This is my sidebar...
+</div>
 </body>
 </html>

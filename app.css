@@ -1,0 +1,22 @@
+#bar {
+    position: fixed;
+    top: 0px;
+    left: 0px;
+    background-color: white;
+    color: black;
+    border: 1px solid;
+    width: 100%;
+    opacity:0.6;
+}
+
+#sidebar {
+    position: fixed;
+    top: 22px;
+    right: 0px;
+    background-color: white;
+    color: black;
+    border: 1px solid;
+    width: 21%;
+    height: 100%;
+    opacity:0.6;
+}

@@ -1,3 +1,39 @@
+function load(page, element){
+    var req = null; 
+    document.getElementById(element).innerHTML="Started...";
+    if (window.XMLHttpRequest){
+	req = new XMLHttpRequest();
+	if (req.overrideMimeType){
+	    req.overrideMimeType('text/xml');
+	}
+    } 
+    else if (window.ActiveXObject) {
+	try {
+	    req = new ActiveXObject("Msxml2.XMLHTTP");
+	} catch (e){
+	    try {
+		req = new ActiveXObject("Microsoft.XMLHTTP");
+	    } catch (e) {}
+	}
+    }
+
+
+    req.onreadystatechange = function(){ 
+	document.getElementById(element).innerHTML="Wait server...";
+	if(req.readyState == 4){
+	    if(req.status == 200){
+		var text = markdown.toHTML(req.responseText);
+		document.getElementById(element).innerHTML= text;  
+	    }   
+	    else{
+		document.getElementById(element).innerHTML="Erro:" + req.status + " " + req.statusText;
+	    }   
+	} 
+    }; 
+    req.open("GET", page, true); 
+    req.send(null); 
+}
+
 $(document).ready(function(){
     // Inicializações do sistema
     var d = new Date()
@@ -8,15 +44,43 @@ $(document).ready(function(){
     })
 
     // a máquina de áudio
-    var runtime = null;
+    window.runtime = null;
 
     // uma base de dados dummy
     var environment = {
-	tau: "var tau = 2*Math.PI;",
+	tau: "/* Ciclo Trigonométrico completo */\nvar tau = 2*Math.PI;",
     }
 
     var current = null;
     var scope = {}
+
+    var submit = function(s){
+	var form = $("#terminal").find('form');
+        form.find('input[type=text]').val(s);
+        form.submit();
+    }
+	
+    $("#about").click(function(){load('ABOUT.md', 'sidebar')})
+    $("#authors").click(function(){load('AUTHORS.md', 'sidebar')})
+    $("#help").click(function(){load('HELP.md', 'sidebar')})
+    $("#tutorials").click(function(){load('TUTORIALS.md', 'sidebar')})
+    $("#play").click(function(){
+	if(!runtime) submit('wavepot')
+	submit('play')
+    })
+    $("#stop").click(function(){
+	submit('stop')
+    })
+	
+    $("#reset").click(function(){
+	submit('reset')
+    })
+    $("#record").click(function(){
+	submit('record')
+    })
+    $("#export").click(function(){
+	submit('export')
+    })
 
     var parse = function(string){
 	var regexp = /def\s{1}[a-zA-Z0-9]+\([\w+\s\,]*\)/
@@ -331,12 +395,12 @@ $(document).ready(function(){
             }
         }
         if(args[0] === "export"){
-            runtime.exportWAV(function(blob){
-                console.log(blob);
-                runtime.stop()
-                runtime.clear()
+	    runtime.exportWAV(function(blob){
+		console.log(blob);
+		runtime.stop()
+		runtime.clear()
 		var url = window.URL.createObjectURL(blob)
-            
+		
 		var $typebox = $("<div>Sua gravação, você pode fazer o <a href="+url+">Download aqui</a></div>").appendTo('.cmd_terminal_content');
 		var $br = $('<br/>').appendTo($typebox);
 		var $audio = $("<audio controls><source src="+url+"></source></audio>").appendTo($typebox);

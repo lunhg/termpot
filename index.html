@@ -1,88 +1,33 @@
 <!DOCTYPE html>
 <html>
-<head>
-<link rel="stylesheet" href="Ptty.css"></link>
-<link rel="stylesheet" href="fallout.css"></link>
-<script src="jquery-2.1.3.min.js"></script>
-<script src="Ptty.jquery.min.js"></script>
-<script src="wavepot-runtime.js"></script>
-<script src="recorderWorker.js"></script>
-<script src="dateFormat.js"></script>
-<script src="CoffeeScript.js"></script>
-<script src="markdown.js"></script>
-<style>
-#about {
-    position: fixed;
-    top: 0px;
-    left: 0px;
-    background-color: white;
-    color: black;
-    border: 1px solid;
-    width: 100%;
-    opacity:0.6;
-}
-#sidebar {
-    position: fixed;
-    top: 20px;
-    right: 0px;
-    background-color: white;
-    color: black;
-    border: 1px solid;
-    width: 20%;
-    height: 100%;
-    opacity:0.6;
-}
-</style>
-
-<script>
-function load(page, element){
-   var req = null; 
-   document.getElementById(element).innerHTML="Started...";
-   if (window.XMLHttpRequest){
-      req = new XMLHttpRequest();
-      if (req.overrideMimeType){
-         req.overrideMimeType('text/xml');
-      }
-   } 
-   else if (window.ActiveXObject) {
-      try {
-         req = new ActiveXObject("Msxml2.XMLHTTP");
-      } catch (e){
-         try {
-            req = new ActiveXObject("Microsoft.XMLHTTP");
-         } catch (e) {}
-      }
-}
-
-
-   req.onreadystatechange = function(){ 
-      document.getElementById(element).innerHTML="Wait server...";
-      if(req.readyState == 4){
-         if(req.status == 200){
-            var text = markdown.toHTML(req.responseText);
-            document.getElementById(element).innerHTML= text   
-         }
-         else{
-            document.getElementById(element).innerHTML="Erro:" + req.status + " " + req.statusText;
-         }   
-      } 
-   }; 
-   req.open("GET", page, true); 
-   req.send(null); 
-}
-</script>
-</head>
-<body>
-<script src="app.js"></script>
-<div id="about">
-<a onclick="load('ABOUT.md', 'sidebar');">About</a> 
-<a>Help</a>
-<a>Tutorials</a>
-<a onclick="load('AUTHORS.md', 'sidebar');">Authors</a>
-</div>
-<div id="terminal"></div>
-<div id="sidebar">
-This is my sidebar...
-</div>
-</body>
+  <head>
+    <link rel="stylesheet" href="Ptty.css"></link>
+    <link rel="stylesheet" href="fallout.css"></link>
+    <link rel="stylesheet" href="app.css"></link>
+    <script src="jquery-2.1.3.min.js"></script>
+    <script src="Ptty.jquery.min.js"></script>
+    <script src="wavepot-runtime.js"></script>
+    <script src="recorderWorker.js"></script>
+    <script src="dateFormat.js"></script>
+    <script src="CoffeeScript.js"></script>
+    <script src="markdown.js"></script>
+  </head>
+  <body>
+    <script src="app.js"></script>
+    <div id="bar">
+      <div id="menu">
+	<input id="about" type="button" name="About" value="About"/> 
+	<input id="help" type="button" name="Help" value="Help"/>
+	<input id="tutorials" type="button" name="Tutorials" value="Tutorials"/>
+	<input id="authors" type="button" name="Authors" value="Authors"/>
+	<input id="play" type="button" name="Play" value="Play"/>
+	<input id="stop" type="button" name="Stop" value="Stop"/>
+	<input id="reset" type="button" name="Reset" value="Reset"/>
+	<input id="record" type="button" name="Record" value="Record"/>
+	<input id="export" type="button" name="Export" value="Export"/>
+      </div>
+    </div>
+    <div id="terminal"></div>
+    <div id="sidebar"></div>
+  </body>
 </html>

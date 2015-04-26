@@ -82,6 +82,26 @@ $(document).ready(function(){
 	submit('export')
     })
 
+    $("#example").click(function(){
+	submit('test()')
+	setTimeout(function(){submit('sin(440, 1)')}, 4000);
+	setTimeout(function(){submit('sin 440, 1')}, 8000);
+	setTimeout(function(){submit('sin(440, sin(110,1))')}, 12000);
+	setTimeout(function(){submit('sin 440, sin 110, 1')}, 16000);
+	setTimeout(function(){submit('sin 440, sin 110, sin 55, 1')}, 20000);
+	setTimeout(function(){submit('sin 440, sin 110, sin 55, sin 0.5, 1')}, 24000);
+	setTimeout(function(){submit('sin 440, sin 110, sin 55, sin 0.5, sin 0.1, 1')}, 30000);
+	setTimeout(function(){submit('sin 440, sin sin(0.01,1000), sin 55, sin 0.5, sin 0.1, 1')}, 34000);
+	setTimeout(function(){submit('sin 440, sin sin(0.01,1000), sin sin(0.02,5000), sin 0.5, sin 0.1, 1')}, 38000);
+	setTimeout(function(){submit('saw 440, sin sin(0.01,1000), sin sin(0.02,5000), sin 0.5, sin 0.1, 1')}, 50000);
+	setTimeout(function(){submit('saw 440, sin sin(0.01,1000), tri sin(0.02,5000), sin 0.5, sin 0.1, 1')}, 75000);
+	setTimeout(function(){submit('saw seq([440,550]), sin sin(0.01,1000), tri sin(0.02,5000), sin 0.5, sin 0.1, 1')}, 90000);
+	setTimeout(function(){submit('saw seq([440,550,330,220]), sin sin(0.01,1000), tri sin(0.02,5000), sin 0.5, sin 0.1, 1')}, 110000);
+	setTimeout(function(){submit('def sonzera() saw seq([440,550]), sin sin(0.01,1000), tri sin(0.02,5000), sin 0.5, sin 0.1, 1 # Toca uma função chamada sonzera')}, 115000);
+	setTimeout(function(){submit('inspect sonzera')}, 115500);
+	setTimeout(function(){submit('sonzera()')}, 120000);
+    })
+
     var parse = function(string){
 	var regexp = /def\s{1}[a-zA-Z0-9]+\([\w+\s\,]*\)/
 	var func = regexp.exec(string)

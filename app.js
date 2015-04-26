@@ -14,80 +14,55 @@ $(document).ready(function(){
     var environment = {
 	tau: "var tau = 2*Math.PI;",
     }
+
     var current = null;
     var scope = {}
 
-    // Registros de variaveis
-    var register_string_as_fn = function(name, cb){
-	environment[name] = cb
+    var parse = function(string){
+	var regexp = /def\s{1}[a-zA-Z0-9]+\([\w+\s\,]*\)/
+	var func = regexp.exec(string)
+
+	var r = /\([\w+\s\,]*\)/
+	var _arg = r.exec(func[0])
+	_arg = _arg[0]
+	var name = func[0].split(r)[0].split("def")[1].split(" ")[1]
+	body_doc = string.split(regexp)
+	body_doc = body_doc[1].split("#")
+	var body = body_doc[0]
+	var doc = body_doc[1]
+	cb = "###\n"+doc+"\n###\n"+name+" = "+_arg+" -> "+body
+
+	return {
+	    name: name,
+	    string: CoffeeScript.compile(cb, {bare: true})
+	}
     }
 
-    var register_fn = function(name, cb){
-	_cb = "var "+name+" = "+cb.toString()+";\n"
-	environment[name] = _cb
+    var register_module = function(string){
+	var parsed = parse(string);
+	environment[parsed.name] = parsed.string
+	return parsed.name
     }
 
     // -----------------------
     // REGISTROS
     // -----------------------
-    register_fn("tmod", function(f, t){
-	return t % (1 / f) * f
-    });
-    register_fn("mute", function(){ 
-	return 0 
-    });
-    register_fn("stereo", function(fn){
-        var c = [0,0]
-        for(var i=0; i<c.length; i++){
-	    c[i] = fn(i);
-        };
-        return c
-    });
-    register_fn("sin", function(f, a){ 
-	return a*Math.sin(tau*f*t)
-    });
-    register_fn("sin2", function(f, a){
-        var fn = function fn(i){
-            var amp = typeof(a) === 'object'?a[i]:a;
-            var tmp = typeof(t) === 'object'?t[i]:t;
-	    return sin(f[i], amp, tmp)
-	}
-        return stereo(fn);
-    });
-    register_fn("saw", function(f, a){
-	return (1 - 2 * tmodf(f, t))* a;
-    });
-    register_fn("ramp", function(f, a){
-	return (2 * tmodf(f, t) - 1) * a
-    });
-    register_fn("tri", function(f, a){
-	return (Math.abs(1 - (2 * t * f) % 2) * 2 - 1) * a
-    });
-    register_fn("sqr", function(f, a){
-	return ((t*f % 1/f < 1/f/2) * 2 - 1) * a
-    });
-    register_fn("pulse", function(f, a, w){
-	return ((t*f % 1/f < 1/f/2*w) * 2 - 1) * a
-    });
-    register_fn("noise", function(a){
-	return a*(Math.random()*2-1)
-    });
-    register_fn("perc", function(input, head, measure, decay, release){
-	var a = next_event(head,measure,t);
-	var b = 1/decay;
-	var c = 1/release;
-	return input * Math.exp(-a*b*Math.exp(a*c))
-    });
-    register_fn("next_event", function(head, measure){
-	return (t/head)%measure
-    });
-    register_fn("test", function(){
-	var s = sin(440,1,t)
-	return perc(s,1,1,0.5,0.15,t)
-    });
-    register_fn("seq", function(a){
-        return a[Math.floor(t%a.length)]
-    });
+    register_module("def tmod(f, t) t%(1/f)*f # Utilizado para controlar módulos 'saw' e 'tri' [f - frequencia, t-tempo]")
+    register_module("def mute() 0 #Zera processador (isso não significa que nada está sendo processado)")
+    register_module("def stereo(fn) fn i for i in [0,1] # Separa audio em dois canais [fn - função]");
+    register_module("def sin(f, a) a*Math.sin(tau*f*t) # Retorna uma senoide [f - frequencia, a-amplitude");
+    register_module("def sin2(f, a) stereo (i)->sin(f[i] or f, a[i] or a, t) # Retorna uma senoide de dois canais [f - array de frequencias, a - array de amplitudes]")
+    register_module("def saw(f, a) (1 - 2 * tmod(f, t))* a  # Retorna uma dente-de-serra [f - frequencia, a - amplitude]")
+    register_module("def ramp(f, a) 2*(tmod(f, t)- 1)*a # Retorna uma rampa [f - frequencia, a - amplitude]")
+    register_module("def ttri(f,t) Math.abs(1-(2*t*f)%2*2-1) # Utilizado no modulo tri [f - frequencia, a - amplitude]")
+    register_module("def tri(f, a) ttri(f, t)*a # Retorna uma onda triangular  [f - frequencia, a - amplitude]")
+    register_module("def sqr(f, a) ((t*f % 1/f < 1/f/2) * 2 - 1) * a  # Retorna uma onda quadrada [f - frequencia, a - amplitude]")
+    register_module("def pulse(f, a, w) ((t*f % 1/f < 1/f/2*w) * 2 - 1) * a # Retorna uma onda pulsante [f - frequencia, a - amplitude]")
+    register_module("def noise(a) a*(Math.random()*2-1) # Retorna um ruído branco [a - amplitude]")
+    register_module("def perc(input, head, measure, decay, release) a=nextevent(head,measure,t); b=1/decay; c=1/release; input*Math.exp(-a*b*Math.exp(a*c)) # Cria um envelope percussivo \n e toca em loop")
+    register_module("def nextevent(head, measure) (t/head)%measure # Utilizado em perc para controlar sequencia de eventos [head-cabeça de tempo, measure - tamanho do compasso")
+    register_module("def test() perc(sin(440,1,t),1,1,0.5,0.15,t) #Uma simples função de teste")
+    register_module("def seq(a) a[Math.floor(t%a.length)] # Retorna uma sequencia de valores no tempo [a - array de valores]")
 
     // ---------------------------
     // FIM REGISTROS
@@ -149,14 +124,15 @@ $(document).ready(function(){
 			"  help tutorial 1 - síntese com módulos pré-definidos\n"+
 			"  help tutorial 2 - tocando e parando\n"+
 			"  help tutorial 3 - gravando e fazendo download\n"+
-			"  help tutorial 4 - tocando notas e ritmos"
+			"  help tutorial 4 - tocando notas e ritmos\n"+
+			"  help tutorial 5 - definindo novas funções"
 		}
 		if(args[2] === "0"){
 		    msg = "Este ambiente aceita operações matemáticas para o DSP:"+
 			" (1) Executando um ruído branco: \n"+
 			"     wavepot> Math.random()*2 - 1\n\n"+
 			"Existe variaveis chamadas 't' (tempo) e 'tau' (2PI) que podem ser usadas para controlar ondas periódicas:\n"+
-			" (2) Executando uma senoide com lá de orquestra:\n"+
+			" (2) (TODO: não funcionando) Executando uma senoide com lá de orquestra:\n"+
 			"     wavepot> Math.sin(tau*440*t)\n\n"+
 			" (3) Silêncio\n"+
 			"     wavepot> 0"
@@ -167,21 +143,29 @@ $(document).ready(function(){
 			"Para ver cada uma utilize o comando 'inspect' ou 'inspect [módulo].\n"+
 			"  (1) Senoide 440 Hz:\n"+
 			"      wavepot> sin(440, 0.71)\n"+
+			"      OU\n"+
+			"      wavepot> sin 440, 0.71 [SEM PARÊNTESE]\n"+
 			"  (2) Dente-de-serra 440 Hz\n"+
 			"      wavepot> saw(440, 0.71)\n"+
+			"      OU\n"+
+			"      wavepot> saw 440, 0.71 [SEM PARÊNTESE]\n"+
 			"  (3) Ruído-branco\n"+
 			"      wavepot> noise(0.71)\n"+
+			"      OU\n"+
+			"      wavepot> noise 0.71 [SEM PARÊNTESE]\n"+
 			"  (4) Silêncio\n"+
 			"      wavepot> mute()"
 		}
 		if(args[2] === "2"){
 		    msg = "Mesmo executando os procedimentos anteriores, não ouvimos nada.\n"+
 			"Para tocar algum som, é necessário executar o comando 'play':\n"+
-			"  (1) wavepot> sin(440,1)\n"+
+			"  (1) wavepot> sin 440, sin(110, 1)\n"+
+			"      OU\n"+
+			"      wavepot> sin 440, sin 110, .71 [SEM PARÊNTESE]\n"+
 			"      wavepot> play\n\n"+
 			"Outra opção é tocar antes de executar algum módulo\n"+
 			"  (2) wavepot> play\n"+
-			"      wavepot> sin(440, 1)"
+			"      wavepot> sin 440, sin 110, 1"
 		}
 		if(args[2] === "3"){
 		    msg = "Podemos gravar; assim como o comando play, ele pode ser chamado antes de qualquer outro.\n"+
@@ -210,15 +194,24 @@ $(document).ready(function(){
 		if(args[2] === "4"){
 		    msg = "Existe uma função chamada 'perc'; ela cria um loop de notas percutidas; \n"+
 			"  (1) wavepot> inspect perc\n"+
-			"      wavepot> perc(sin(440,1), 1, 2, 0.1, 0.9\n"+
+			"      wavepot> perc(sin(440,1), 1, 2, 0.1, 0.9)\n"+
+			"      OU\n"+
+			"      wavepot> perc sin(440,1), 1, 2, 0.1, 0.9 [SEM PARÊNTESE NO perc]\n"+
 			"      wavepot> play\n"+
 			"\nExiste outra função chamada 'seq'; ela cria uma sequencia de notas; bom para ser usado junto com perc\n"+
 			"  (2) wavepot> play\n"+
-			"      wavepot> perc(sin(seq([404,504]),1), 1, 0.5, 0.1, 0.3)\n"+
+			"      wavepot> perc sin(seq([404,504]),1), 1, 0.5, 0.1, 0.3\n"+
 			"  (3) Uma melodia com permutações\n"+
-			"      wavepot> perc(sin(seq([404,504,604]),sin(seq([204,304,404, 504]),1)), 1, 1, 0.1, 0.3)\n"+
-			"  (4) Um contraponto de duas vozes:\n"+
-			"      wavepot> perc(sin(seq([404,504,604]),sin(seq([204,304,404, 504]),1)), 0.2125, 0.0016255, 0.1, 0.3)"
+			"      wavepot> perc sin(seq([404,504,604]),sin(seq([204,304,404, 504]),1)), 1, 1, 0.1, 0.3"
+		}
+
+		if(args[2] === "5"){
+		    msg = "definindo novas funções em tempo real é fácil:\n"+
+			"  (1) definindo um som qualquer a partir de outro modulo e documentando-o\n"+
+			"      wavepot> def minhafuncao() sin(440,1) #Retorna uma senoide de lá de orquestra\n"+
+			"      wavepot> inspect minhafuncao\n"+
+			"      wavepot> minhafuncao()\n"+
+			"      wavepot> play"
 		}
 	    }
 	    else if(args[1] === "comandos"){
@@ -359,24 +352,7 @@ $(document).ready(function(){
             var name = null;
 	    
 	    args = args.join(" ")
-	    split = args.split(")")
-	    func = split[0]
-	    body = split[1]
-	    doc = "não fornecido"
-	    if(body.split("#")){
-		body_doc = body.split("#")
-		body = body_doc[0]
-		doc = body_doc[1]
-	    }
-	    
-	    _func = func.split("(")
-	    name = _func[0].split(" ")[1]
-	    _arg = _func[1]
-	    cb = name+" = ("+_arg+") -> "+body
-
-	    cb = CoffeeScript.compile(cb, {bare: true});
-	    cb = "//"+doc+"\n"+cb
-	    register_string_as_fn(name, cb)
+	    name = register_module(args)
 	    return {
 		type: 'print',
 		out: name+" defined" 

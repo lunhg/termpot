@@ -98,8 +98,17 @@ $(document).ready(function(){
 	setTimeout(function(){submit('saw seq([440,550]), sin sin(0.01,1000), tri sin(0.02,5000), sin 0.5, sin 0.1, 1')}, 90000);
 	setTimeout(function(){submit('saw seq([440,550,330,220]), sin sin(0.01,1000), tri sin(0.02,5000), sin 0.5, sin 0.1, 1')}, 110000);
 	setTimeout(function(){submit('def sonzera() saw seq([440,550]), sin sin(0.01,1000), tri sin(0.02,5000), sin 0.5, sin 0.1, 1 # Toca uma função chamada sonzera')}, 115000);
-	setTimeout(function(){submit('inspect sonzera')}, 115500);
-	setTimeout(function(){submit('sonzera()')}, 120000);
+	setTimeout(function(){submit('inspect sonzera')}, 120000);
+	setTimeout(function(){submit('sonzera()')}, 120500);
+		setTimeout(function(){submit('def sonzera(array) saw seq(array), sin sin(0.01,1000), tri sin(0.02,5000), sin 0.5, sin 0.1, 1 # Toca uma função chamada sonzera')}, 130000);
+	setTimeout(function(){submit('inspect sonzera')}, 130500);
+	setTimeout(function(){submit('perc sonzera([440, 550]), 1, 1, 0.5, 0.5')}, 131000);
+	setTimeout(function(){submit('def som(a) r=Math.random()*a; perc sonzera([a/2, a, a*2]), 1, Math.random()*2, 0.5, 1')}, 133000);
+	setTimeout(function(){submit('inspect som')}, 135000);
+	setTimeout(function(){submit('som(440) + som(550)')}, 137000);
+	setTimeout(function(){submit('som(440) + som(550) + som(660)')}, 145000);
+	setTimeout(function(){submit('som(440) + som(550) + som(660) + som(770)')}, 150000);
+	setTimeout(function(){submit('som(440) + som(550) + som(660) + som(770) + som(880)')}, 160000);
     })
 
     var parse = function(string){

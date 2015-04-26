@@ -11,6 +11,8 @@
  *           as published by Sam Hocevar. See the COPYING file for more details.
  **/
 
+html, body { height: 100%; width: 100%; margin: 0; padding: 0; }
+
 /* Basic Ptty CSS */
 .cmd_terminal {
     background-color: #aaa;

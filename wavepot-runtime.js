@@ -9,73 +9,74 @@ function WavepotRuntime(context, bufferSize, channels) {
     this.context = context || new contextClass();
     this.playing = false;
     this.bufferSize = bufferSize || 1024;
-        this.channels = channels || 2
+    this.channels = channels || 2
     this.scriptnode = this.context.createScriptProcessor(this.bufferSize, 0, this.channels);
-        this.worker = new Worker('recorderWorker.js');
-        this.worker.postMessage({
-          command: 'init',
-          config: {
+    this.worker = new Worker('recorderWorker.js');
+    this.worker.postMessage({
+        command: 'init',
+        config: {
             sampleRate: this.context.sampleRate
-          }
-        });
-        this.recording = false;
+        }
+    });
+    this.recording = false;
 }
 
 WavepotRuntime.prototype.init = function(callback){
     var _this = this;
     // Maquina virtual de DSP
     this.scriptnode.onaudioprocess = function(e) {
-    // Sistema estereofonico de 2 canais
-       var out = [
+    
+	// Sistema estereofonico de 2 canais
+	var out = [
             e.outputBuffer.getChannelData(0),
             e.outputBuffer.getChannelData(1)
         ];
             
-    // Tempo discretizado
-    var f = 0, t = 0, td = 1.0 / _this.context.sampleRate;
+	// Tempo discretizado
+	var f = 0, t = 0, td = 1.0 / _this.context.sampleRate;
             
-       // A cada janela temporal, o valor numerico
-       // de amplitude vai ser atualizado
-    if (_this.scope && _this.scope.dsp && _this.playing) {
+	// A cada janela temporal, o valor numerico
+	// de amplitude vai ser atualizado
+	if (_this.scope && _this.scope.dsp && _this.playing) {
             t = _this.time;
             for (var i = 0; i < out[0].length; i++) {
-               // Ajusta o relógio
-              _this.scope.set_time(t);
-               // função definida dinamicamente
-               f = _this.scope.dsp();
+		// Ajusta o relógio
+		_this.scope.set_time(t);
+		// função definida dinamicamente
+		f = _this.scope.dsp();
 
-               // Se a funcao retornar um número
-               // utilizar ele nos dois canais
-               // Se a funcao retornar um Array
-               // de dois valores, separar nos canais
-              if(typeof(f) === 'number'){
-                  out[0][i] =  f
-                  out[1][i] =  f
-              }
-              else if (typeof(f) === 'object'){
-                  out[0][i] =  f[0]
-                  out[1][i] =  f[1]
-              }
-              // Incrementar o tempo
-              t += td;
-           }
-    _this.time = t;
-    
-        // Continuar o processamento se nada for atualizado
-    } else {
-            for (var i = 0; i < out[0].length; i++) {
-        out[0][i] = f[0] | f
-        out[1][i] = f[1] | f
+		// Se a funcao retornar um número
+		// utilizar ele nos dois canais
+		// Se a funcao retornar um Array
+		// de dois valores, separar nos canais
+		if(typeof(f) === 'number'){
+                    out[0][i] =  f
+                    out[1][i] =  f
+		}
+		else if (typeof(f) === 'object'){
+                    out[0][i] =  f[0]
+                    out[1][i] =  f[1]
+		}
+		// Incrementar o tempo
+		t += td;
             }
-    }
+	    _this.time = t;
+    
+            // Continuar o processamento se nada for atualizado
+	} else {
+            for (var i = 0; i < out[0].length; i++) {
+		out[0][i] = f[0] | f
+		out[1][i] = f[1] | f
+            }
+	}
       
-      // Gravar, se for solicitado
-    if (_this.recording){
-        _this.worker.postMessage({
-        command: 'record',
-        buffer: out
-        });
-    }
+	// Gravar, se for solicitado
+	if (_this.recording){
+            _this.worker.postMessage({
+		command: 'record',
+		buffer: out
+            });
+	}
     }
     this.scriptnode.connect(_this.context.destination);
 }
@@ -86,21 +87,23 @@ WavepotRuntime.prototype.compile = function(code) {
     var ee = null;
     var newscope = new Object();
     try {
-    var f = new Function('var sampleRate=' 
-            + this.context.sampleRate+ ';\nvar t = 0;' +
-            "\nthis.set_time = function(time){ t = time};\n" +
-            code + '\n\nthis.dsp = dsp;');
-    console.log(f);
-    var r = f.call(newscope);
-//    console.log(r);
+	var _code = 'var sampleRate='+ this.context.sampleRate+ 
+	    ';\nvar t = 0;' +
+	    "\nthis.set_time = function(time){ t = time};\n" +
+	    code + 
+	    '\n\nthis.dsp = dsp;'
+	var f = new Function(_code);
+	console.log(f);
+	var r = f.call(newscope);
+	//    console.log(r);
     } catch(e) {
-//    console.log(e);
-    ee = e;
+	//    console.log(e);
+	ee = e;
     }
-//    console.log('WavepotRuntime: compiled', newscope);
+    //    console.log('WavepotRuntime: compiled', newscope);
     if (newscope && typeof(newscope.dsp) == 'function') {
-    this.scope = newscope;
-    return true;
+	this.scope = newscope;
+	return true;
     } else {
     if(ee){
         return ee.stack.toString();

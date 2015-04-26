@@ -9,6 +9,7 @@
 <script src="recorderWorker.js"></script>
 <script src="dateFormat.js"></script>
 <script src="CoffeeScript.js"></script>
+<script src="markdown.js"></script>
 <style>
 #about {
     position: fixed;
@@ -58,7 +59,8 @@ function load(page, element){
       document.getElementById(element).innerHTML="Wait server...";
       if(req.readyState == 4){
          if(req.status == 200){
-            document.getElementById(element).innerHTML= req.responseText;   
+            var text = markdown.toHTML(req.responseText);
+            document.getElementById(element).innerHTML= text   
          }
          else{
             document.getElementById(element).innerHTML="Erro:" + req.status + " " + req.statusText;

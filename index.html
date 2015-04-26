@@ -3,13 +3,17 @@
 <head>
 <link rel="stylesheet" href="Ptty.css"></link>
 <link rel="stylesheet" href="fallout.css"></link>
+<script>
+    // a máquina de áudio
+    var runtime = null;
+</script>
+
 <script src="jquery-2.1.3.min.js"></script>
 <script src="Ptty.jquery.min.js"></script>
 <script src="wavepot-runtime.js"></script>
 <script src="recorderWorker.js"></script>
 <script src="dateFormat.js"></script>
-<script src="CoffeeScript.js"></script>
-<script src="markdown.js"></script>
+
 <style>
 #about {
     position: fixed;
@@ -52,16 +56,15 @@ function load(page, element){
             req = new ActiveXObject("Microsoft.XMLHTTP");
          } catch (e) {}
       }
-}
+        }
 
 
    req.onreadystatechange = function(){ 
       document.getElementById(element).innerHTML="Wait server...";
       if(req.readyState == 4){
          if(req.status == 200){
-            var text = markdown.toHTML(req.responseText);
-            document.getElementById(element).innerHTML= text   
-         }
+            document.getElementById(element).innerHTML= req.responseText;   
+         }   
          else{
             document.getElementById(element).innerHTML="Erro:" + req.status + " " + req.statusText;
          }   
@@ -76,6 +79,8 @@ function load(page, element){
 <script src="app.js"></script>
 <div id="about">
 <a onclick="load('README.md', 'sidebar');">About</a> | Help | Tutorials | Authors | ...
+<input type=button name=Play value=Play onclick="runtime.play()"/>
+<input type=button name=Stop value=Stop onclick="runtime.stop()"/>
 </div>
 <div id="terminal"></div>
 <div id="sidebar">

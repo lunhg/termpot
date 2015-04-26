@@ -358,24 +358,24 @@ $(document).ready(function(){
             var _args = null;
             var name = null;
 	    
-	    split = args[1].split("(")
-	    name = split[0]
-	    _arg = split[1]
-	    cb = "var "+name+" = function("+_arg;
-	    id = 0;
-	    for(var i=2; i<args.length && args.length >2; i++){
-		cb += ""+args[i];
-		if(args[i].indexOf(")") > 0){
-		    id = i+1;
-		    break;
-		}	
+	    args = args.join(" ")
+	    split = args.split(")")
+	    func = split[0]
+	    body = split[1]
+	    doc = "não fornecido"
+	    if(body.split("#")){
+		body_doc = body.split("#")
+		body = body_doc[0]
+		doc = body_doc[1]
 	    }
-	    cb += "{\n  return ";
-	    for(var i=id; i<args.length && args.length >id; i++){
-		cb += ""+args[i];
-	    }
-	    cb += ";\n};";
 	    
+	    _func = func.split("(")
+	    name = _func[0].split(" ")[1]
+	    _arg = _func[1]
+	    cb = name+" = ("+_arg+") -> "+body
+
+	    cb = CoffeeScript.compile(cb, {bare: true});
+	    cb = "//"+doc+"\n"+cb
 	    register_string_as_fn(name, cb)
 	    return {
 		type: 'print',
@@ -412,17 +412,18 @@ $(document).ready(function(){
 //            callback: args[1],
 //            params: p
 //            }
-	    cb = "\nreturn "+args[0]+"";
-	    for(var i=1; i<args.length && args.length >1; i++){
-		cb += ""+args[i];
-	    }
+	    //cb = ""+args[0]+""
+	    //for(var i=1; i<args.length && args.length >1; i++){
+	    //cb += ""+args[i];
+	    //}
+	    cb = args.join(" ")
 
 	    //Memorizar o código corrente
 	    //Para poder utilizar como módulo
 	    //definido pelo usuário
 	    //assim n precisa ficar escrevendo
 	    //um monte de função
-	    current = args[0].split("(")[0]
+	    current = args[0].split(" ")[0]
 
 	    // Esta é a função que vai ser o ambiente 'environment'
 	    // concatenado em uma única string
@@ -431,8 +432,11 @@ $(document).ready(function(){
 	    for(var v in environment){
 		envir += (environment[v]+"\n");
 	    }
+
+	    //Compile a string cs para js sem escopo
+	    cb = CoffeeScript.compile(cb, {bare: true})
             
-	    envir += "var dsp = function(t){\n\t"+cb+"\n};";
+	    envir += "var dsp = function(t){\n\treturn "+cb+"\n};";
             
 	    // Descomente se quiser ver tudo: debug
 	    //window.console.log(envir);

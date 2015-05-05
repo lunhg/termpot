@@ -1,6 +1,6 @@
-function load(page, element){
+function load(page, css){
     var req = null; 
-    document.getElementById(element).innerHTML="Started...";
+    //document.getElementById(element).innerHTML="Started...";
     if (window.XMLHttpRequest){
 	req = new XMLHttpRequest();
 	if (req.overrideMimeType){
@@ -19,11 +19,12 @@ function load(page, element){
 
 
     req.onreadystatechange = function(){ 
-	document.getElementById(element).innerHTML="Wait server...";
+	//document.getElementById(element).innerHTML="Wait server...";
 	if(req.readyState == 4){
 	    if(req.status == 200){
 		var text = markdown.toHTML(req.responseText);
-		document.getElementById(element).innerHTML= text;  
+		var $el = $(text)
+		$(css).append($el); 
 	    }   
 	    else{
 		document.getElementById(element).innerHTML="Erro:" + req.status + " " + req.statusText;
@@ -60,10 +61,10 @@ $(document).ready(function(){
         form.submit();
     }
 	
-    $("#about").click(function(){load('ABOUT.md', 'sidebar')})
-    $("#authors").click(function(){load('AUTHORS.md', 'sidebar')})
-    $("#help").click(function(){load('HELP.md', 'sidebar')})
-    $("#tutorials").click(function(){load('TUTORIALS.md', 'sidebar')})
+    $("#about").click(function(){load('ABOUT.md', '.sidebar')})
+    $("#authors").click(function(){load('AUTHORS.md', '.sidebar')})
+    $("#help").click(function(){load('HELP.md', '.sidebar')})
+    $("#tutorials").click(function(){load('TUTORIALS.md', '.sidebar')})
     $("#play").click(function(){
 	if(!runtime) submit('wavepot')
 	submit('play')
@@ -81,55 +82,6 @@ $(document).ready(function(){
     $("#export").click(function(){
 	submit('export')
     })
-
-    $("#example").click(function(){
-	submit('test()')
-	setTimeout(function(){submit('sin(440, 1)')}, 4000);
-	setTimeout(function(){submit('sin 440, 1')}, 8000);
-	setTimeout(function(){submit('sin(440, sin(110,1))')}, 12000);
-	setTimeout(function(){submit('sin 440, sin 110, 1')}, 16000);
-	setTimeout(function(){submit('sin 440, sin 110, sin 55, 1')}, 20000);
-	setTimeout(function(){submit('sin 440, sin 110, sin 55, sin 0.5, 1')}, 24000);
-	setTimeout(function(){submit('sin 440, sin 110, sin 55, sin 0.5, sin 0.1, 1')}, 30000);
-	setTimeout(function(){submit('sin 440, sin sin(0.01,1000), sin 55, sin 0.5, sin 0.1, 1')}, 34000);
-	setTimeout(function(){submit('sin 440, sin sin(0.01,1000), sin sin(0.02,5000), sin 0.5, sin 0.1, 1')}, 38000);
-	setTimeout(function(){submit('saw 440, sin sin(0.01,1000), sin sin(0.02,5000), sin 0.5, sin 0.1, 1')}, 50000);
-	setTimeout(function(){submit('saw 440, sin sin(0.01,1000), tri sin(0.02,5000), sin 0.5, sin 0.1, 1')}, 75000);
-	setTimeout(function(){submit('saw seq([440,550]), sin sin(0.01,1000), tri sin(0.02,5000), sin 0.5, sin 0.1, 1')}, 90000);
-	setTimeout(function(){submit('saw seq([440,550,330,220]), sin sin(0.01,1000), tri sin(0.02,5000), sin 0.5, sin 0.1, 1')}, 110000);
-	setTimeout(function(){submit('def sonzera() saw seq([440,550]), sin sin(0.01,1000), tri sin(0.02,5000), sin 0.5, sin 0.1, 1 # Toca uma função chamada sonzera')}, 115000);
-	setTimeout(function(){submit('inspect sonzera')}, 120000);
-	setTimeout(function(){submit('sonzera()')}, 120500);
-		setTimeout(function(){submit('def sonzera(array) saw seq(array), sin sin(0.01,1000), tri sin(0.02,5000), sin 0.5, sin 0.1, 1 # Toca uma função chamada sonzera')}, 130000);
-	setTimeout(function(){submit('inspect sonzera')}, 130500);
-	setTimeout(function(){submit('perc sonzera([440, 550]), 1, 1, 0.5, 0.5')}, 131000);
-	setTimeout(function(){submit('def som(a) r=Math.random()*a;s=0.5+Math.random()*2; perc sonzera([a/2, a, a*2]), 1, s, 0.5, 1')}, 133000);
-	setTimeout(function(){submit('inspect som')}, 135000);
-	setTimeout(function(){submit('som(440) + som(550)')}, 137000);
-	setTimeout(function(){submit('som(440) + som(550) + som(660)')}, 145000);
-	setTimeout(function(){submit('som(440) + som(550) + som(660) + som(770)')}, 150000);
-	setTimeout(function(){submit('som(440) + som(550) + som(660) + som(770) + som(880)')}, 160000);
-    })
-
-    var parse = function(string){
-	var regexp = /def\s{1}[a-zA-Z0-9]+\([\w+\s\,]*\)/
-	var func = regexp.exec(string)
-
-	var r = /\([\w+\s\,]*\)/
-	var _arg = r.exec(func[0])
-	_arg = _arg[0]
-	var name = func[0].split(r)[0].split("def")[1].split(" ")[1]
-	body_doc = string.split(regexp)
-	body_doc = body_doc[1].split("#")
-	var body = body_doc[0]
-	var doc = body_doc[1]
-	cb = "###\n"+doc+"\n###\n"+name+" = "+_arg+" -> "+body
-
-	return {
-	    name: name,
-	    string: CoffeeScript.compile(cb, {bare: true})
-	}
-    }
 
     var register_module = function(string){
 	var parsed = parse(string);
@@ -156,9 +108,51 @@ $(document).ready(function(){
     register_module("def nextevent(head, measure) (t/head)%measure # Utilizado em perc para controlar sequencia de eventos [head-cabeça de tempo, measure - tamanho do compasso")
     register_module("def test() perc(sin(440,1,t),1,1,0.5,0.15,t) #Uma simples função de teste")
     register_module("def seq(a) a[Math.floor(t%a.length)] # Retorna uma sequencia de valores no tempo [a - array de valores]")
+    
 
     // ---------------------------
     // FIM REGISTROS
+    // ---------------------------
+
+
+    // --------------------------
+    // CONTROLES
+    // --------------------------
+    var show_controls = false
+    var control_vars = []
+    function addSlider(name, min, max){
+	control_vars.push(name)
+	$wrapper = $('<div>'+name+'</div>')
+	$wrapper.attr('id', name+"_slider")
+	$wrapper.addClass("GUI")
+	$wrapper.slider({
+	    range: "min",
+	    animate: true,
+	    orientation: "vertical"
+	})
+	//$wrapper.slider("option", "min", min);
+	//$wrapper.slider("option", "max", max);
+        $wrapper.hide()
+	$('#sidebar').append($wrapper)
+	$$newcontrole = "$('#"+name+"_slider')"
+	sJq = "v = "+$$newcontrole+".slider('option', 'value'); console.log(v); v"
+	s = register_module("def "+name+"() "+sJq)
+	s+" added"
+    }
+
+    var hide_controls = function(){
+	show_controls = !show_controls
+	if(show_controls){
+	    for(var c in control_vars){
+		$("#"+control_vars[c]+"_slider").show()
+	    }
+	}
+    }
+
+    $("#controls").click(hide_controls)
+
+    // ---------------------------
+    // FIM CONTROLES
     // ---------------------------
 
     var cmd_wavepot = function(enter, bufferSize, channels){
@@ -472,20 +466,7 @@ $(document).ready(function(){
 	// Uma execução de um módulo de áudio
 	// (ver inspect)
 	else{
-//            var p = [];
-//            if(args.length === 3) p.push(args[2]);
-//            if(args.length > 3) p = args.slice(2, args.length)
-//            current = {callback: args[1], params: p};
-//            return {
-//            type: 'print',
-//            callback: args[1],
-//            params: p
-//            }
-	    //cb = ""+args[0]+""
-	    //for(var i=1; i<args.length && args.length >1; i++){
-	    //cb += ""+args[i];
-	    //}
-	    cb = args.join(" ")
+	    cs = args.join(" ")
 
 	    //Memorizar o código corrente
 	    //Para poder utilizar como módulo
@@ -503,15 +484,34 @@ $(document).ready(function(){
 	    }
 
 	    //Compile a string cs para js sem escopo
-	    cb = CoffeeScript.compile(cb, {bare: true})
+	    js = CoffeeScript.compile(cs, {bare: true})
             
-	    envir += "var dsp = function(t){\n\treturn "+cb+"\n};";
+	    //Verifique se o comando dado foi um controle ou audio
+	    var reg = /slider(\(|\s)(\'|\")[a-z]+(\'|\")\,\s?\d\s?\,\s?\d(\)|\s)?/
+	    if(reg.test(cs)){
+		var reg1 = /slider\((\'|\")[a-z]+(\'|\")\,\s?\d\s?\,\s?\d\)?/
+		var reg2 = /slider\s(\'|\")[a-z]+(\'|\")\,\s?\d\s?\,\s?\d\s?/
+		var nome = null
+		var min = null
+		if(reg1.test(cs)){
+		    s =  cs.split(",")
+		    s1 = s[0].split("(")
+		    nome = s1[1].split("\"")[1].split("\"")[0]
+		    min = s[1]
+		    max = s[2].split(")")[0]
+		}
+		// TODO arrumar coffeescript
+		return addSlider(nome, min, max)
+	    }
+	    else{
+		envir += "var dsp = function(t){\n\treturn "+js+"\n};";
             
-	    // Descomente se quiser ver tudo: debug
-	    //window.console.log(envir);
-	    return {
-		type: 'print',
-		out: runtime.compile(envir)
+		// Descomente se quiser ver tudo: debug
+		//window.console.log(envir);
+		return {
+		    type: 'print',
+		    out: runtime.compile(envir)
+		}
 	    }
 
         }   

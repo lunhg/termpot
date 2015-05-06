@@ -119,37 +119,40 @@ $(document).ready(function(){
     // CONTROLES
     // --------------------------
     var show_controls = false
-    var control_vars = []
+    window.control_vars = {}
     function addSlider(name, min, max){
-	control_vars.push(name)
-	$wrapper = $('<div>'+name+'</div>')
-	$wrapper.attr('id', name+"_slider")
-	$wrapper.addClass("GUI")
-	$wrapper.slider({
+	control_vars[name] = {value: 0};
+	$wrapper = $('<div>'+name+'</div>').attr('id', name+"_slider").addClass("GUI").slider({
 	    range: "min",
 	    animate: true,
-	    orientation: "vertical"
-	})
-	//$wrapper.slider("option", "min", min);
-	//$wrapper.slider("option", "max", max);
-        $wrapper.hide()
-	$('#sidebar').append($wrapper)
-	$$newcontrole = "$('#"+name+"_slider')"
-	sJq = "v = "+$$newcontrole+".slider('option', 'value'); console.log(v); v"
-	s = register_module("def "+name+"() "+sJq)
-	s+" added"
+	    orientation: "vertical",
+	    min: parseFloat(0),
+	    max: parseFloat(1000),
+	    slide: function(event, ui){
+		control_vars[name].value = ui.value/1000;
+	    }
+	}).hide().appendTo("#sidebar")
+	
+	return {
+	    type: 'print',
+	    out: register_module("def "+name+"() window.control_vars['"+name+"'].value")
+	}
     }
 
-    var hide_controls = function(){
+    var controls_handler = function(){
 	show_controls = !show_controls
-	if(show_controls){
-	    for(var c in control_vars){
-		$("#"+control_vars[c]+"_slider").show()
+	for(var c in control_vars){
+	    var $el = $("#"+c+"_slider")
+	    if(show_controls){
+		$el.show()
+	    }
+	    else{
+		$el.hide()
 	    }
 	}
     }
 
-    $("#controls").click(hide_controls)
+    $("#controls").click(controls_handler)
 
     // ---------------------------
     // FIM CONTROLES

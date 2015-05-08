@@ -1,3 +1,6 @@
+// Discussão:
+// - usar jquery ou DOM puro?
+// DOM puro é mais rápido, mas necessita de mais linhas; jquery é pra quem não sabe programar (realmente eu não sei, sei apenas que tem problemas de segurança), mas não sei como resolvê-los, se você, que lê, sabe mexer bem com isso, sugiro uma abertura fork de DOM.
 function load(page, css){
     var req = null; 
     //document.getElementById(element).innerHTML="Started...";
@@ -45,15 +48,12 @@ $(document).ready(function(){
     })
 
     // a máquina de áudio
-    window.runtime = null;
+    var runtime = null;
 
     // uma base de dados dummy
     var environment = {
 	tau: "/* Ciclo Trigonométrico completo */\nvar tau = 2*Math.PI;",
     }
-
-    var current = null;
-    var scope = {}
 
     var submit = function(s){
 	var form = $("#terminal").find('form');
@@ -82,7 +82,18 @@ $(document).ready(function(){
     $("#export").click(function(){
 	submit('export')
     })
-
+    $("#example").click(function(){
+	submit('wavepot')
+	setTimeout(function(){ submit("slider(\"gain\", 0, 100)")}, 1000)
+	setTimeout(function(){ submit("slider(\"car\", 0, 100)")}, 3000)
+	setTimeout(function(){ submit("slider(\"mod\", 0, 100)")}, 5000)
+	setTimeout(function(){ submit("sin 440, gain()")}, 6000)
+	setTimeout(function(){ submit("play")}, 6500)
+	setTimeout(function(){ submit("gain()* sin(440, 1)")}, 20000)
+	setTimeout(function(){ submit("gain()* sin(440, car())")}, 30000)
+	setTimeout(function(){ submit("gain()* sin(440+sin(330,1), car())")}, 45000)
+	setTimeout(function(){ submit("gain()* sin(440+sin(330, mod()), car())")}, 60000)
+    })
     var register_module = function(string){
 	var parsed = parse(string);
 	environment[parsed.name] = parsed.string
@@ -108,8 +119,6 @@ $(document).ready(function(){
     register_module("def nextevent(head, measure) (t/head)%measure # Utilizado em perc para controlar sequencia de eventos [head-cabeça de tempo, measure - tamanho do compasso")
     register_module("def test() perc(sin(440,1,t),1,1,0.5,0.15,t) #Uma simples função de teste")
     register_module("def seq(a) a[Math.floor(t%a.length)] # Retorna uma sequencia de valores no tempo [a - array de valores]")
-    
-
     // ---------------------------
     // FIM REGISTROS
     // ---------------------------
@@ -119,30 +128,65 @@ $(document).ready(function(){
     // CONTROLES
     // --------------------------
     var show_controls = false
-    window.control_vars = {}
-    function addSlider(name, min, max){
-	control_vars[name] = {value: 0};
-	$wrapper = $('<div>'+name+'</div>').attr('id', name+"_slider").addClass("GUI").slider({
+    var control_vars = []
+
+    // De https://github.com/processing/p5.js/blob/master/src/math/calculation.js
+    var map = function(n, start1, stop1, start2, stop2) {
+	return ((n-start1)/(stop1-start1))*(stop2-start2)+start2;
+    };
+
+    // Adiciona um simples slider jquery
+    function jquerySlider($el, min, max){
+	return $el.slider({
 	    range: "min",
 	    animate: true,
 	    orientation: "vertical",
-	    min: parseFloat(0),
-	    max: parseFloat(1000),
+	    min: parseFloat(min),
+	    max: parseFloat(max),
 	    slide: function(event, ui){
-		control_vars[name].value = ui.value/1000;
+		var name = $(this).attr('id').split("_")[0]
+		runtime.setControl(name, {value: map(ui.value, min, max, 0, 1) })
 	    }
-	}).hide().appendTo("#sidebar")
-	
-	return {
-	    type: 'print',
-	    out: register_module("def "+name+"() window.control_vars['"+name+"'].value")
-	}
+	});
     }
 
-    var controls_handler = function(){
+    // registra um novo modulo
+    // e adiciona uma gui
+    function addSlider(name, min, max){
+	$wrapper = null;
+	if(control_vars.indexOf(name) === -1){
+	    control_vars.push(name)
+	    runtime.addControl(name, {value: 0})
+	    control_vars.push(name)
+	    $wrapper = jquerySlider($('<div>'+name+'</div>').addClass("GUI").attr('id', name+"_slider"),  min, max)
+	    if(show_controls){
+		$wrapper.hide();
+	    }
+	    else{
+		$wrapper.show();
+	    }
+	    $wrapper.appendTo("#sidebar")
+	    return {
+		type: 'print',
+		out: register_module("def "+name+"() if controls[\""+name+"\"] then v = controls[\""+name+"\"][\"value\"]; v else new Error name+' not available' #returns a value between "+min+" & "+max+" from '"+name+"' slider ")
+	    }
+	}
+	else{
+	    $wrapper = jquerySlider($('#'+name+'_slider'), min, max)
+	    return {
+		type: 'print',
+		out: name+' redefined' 
+	    }
+	}
+
+	
+    }
+
+    // Pode-se habilitar ou não os controles
+    $("#controls").click(function(){
 	show_controls = !show_controls
 	for(var c in control_vars){
-	    var $el = $("#"+c+"_slider")
+	    var $el = $("#"+control_vars[c]+"_slider")
 	    if(show_controls){
 		$el.show()
 	    }
@@ -150,14 +194,14 @@ $(document).ready(function(){
 		$el.hide()
 	    }
 	}
-    }
-
-    $("#controls").click(controls_handler)
+    });
 
     // ---------------------------
     // FIM CONTROLES
     // ---------------------------
 
+    
+    // Comando de inicialização do wavepot
     var cmd_wavepot = function(enter, bufferSize, channels){
 	if(enter){
             try{
@@ -176,6 +220,7 @@ $(document).ready(function(){
 	}
     }
 
+    // Comandos diversos
     $.register_command(
     'wavepot',
     'start wavepot runtime for audio synthesis',

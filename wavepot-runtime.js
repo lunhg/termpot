@@ -19,10 +19,13 @@ function WavepotRuntime(context, bufferSize, channels) {
         }
     });
     this.recording = false;
+
 }
 
 WavepotRuntime.prototype.init = function(callback){
-    var _this = this;
+
+    var _this = this
+
     // Maquina virtual de DSP
     this.scriptnode.onaudioprocess = function(e) {
     
@@ -39,6 +42,7 @@ WavepotRuntime.prototype.init = function(callback){
 	// de amplitude vai ser atualizado
 	if (_this.scope && _this.scope.dsp && _this.playing) {
             t = _this.time;
+	    _this.scope.set_controls(_this.controls);
             for (var i = 0; i < out[0].length; i++) {
 		// Ajusta o relógio
 		_this.scope.set_time(t);
@@ -81,15 +85,35 @@ WavepotRuntime.prototype.init = function(callback){
     this.scriptnode.connect(_this.context.destination);
 }
 
+// Controles
+// Qualquer controle
+// adicionado através do comando de terminal
+WavepotRuntime.prototype.addControl = function(name, obj){
+    if(!this.controls) this.controls = {}
+    this.controls[name] = obj;
+} 
+
+WavepotRuntime.prototype.setControl = function(name, obj){
+    if(this.controls[name]){
+	this.controls[name].value = obj.value;
+    }
+    else{
+	throw new Error(name+" not Found!")
+    }
+}
+
 WavepotRuntime.prototype.compile = function(code) {
     // console.log('WavepotRuntime: compile', code);
     this.code = code;
     var ee = null;
     var newscope = new Object();
+
     try {
-	var _code = 'var sampleRate='+ this.context.sampleRate+ 
-	    ';\nvar t = 0;' +
-	    "\nthis.set_time = function(time){ t = time};\n" +
+	var _code = "var sampleRate = "+this.context.sampleRate+";\n\n"+
+	    "var t = 0;\n\n"+
+	    "var controls = {};\n"+
+	    "this.set_time = function(time){ t = time};\n" +
+	    "this.set_controls = function(c){ controls = c};\n"+
 	    code + 
 	    '\n\nthis.dsp = dsp;'
 	var f = new Function(_code);

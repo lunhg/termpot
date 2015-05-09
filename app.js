@@ -1,44 +1,10 @@
 // Discussão:
 // - usar jquery ou DOM puro?
 // DOM puro é mais rápido, mas necessita de mais linhas; jquery é pra quem não sabe programar (realmente eu não sei, sei apenas que tem problemas de segurança), mas não sei como resolvê-los, se você, que lê, sabe mexer bem com isso, sugiro uma abertura fork de DOM.
-function load(page, css){
-    var req = null; 
-    //document.getElementById(element).innerHTML="Started...";
-    if (window.XMLHttpRequest){
-	req = new XMLHttpRequest();
-	if (req.overrideMimeType){
-	    req.overrideMimeType('text/xml');
-	}
-    } 
-    else if (window.ActiveXObject) {
-	try {
-	    req = new ActiveXObject("Msxml2.XMLHTTP");
-	} catch (e){
-	    try {
-		req = new ActiveXObject("Microsoft.XMLHTTP");
-	    } catch (e) {}
-	}
-    }
-
-
-    req.onreadystatechange = function(){ 
-	//document.getElementById(element).innerHTML="Wait server...";
-	if(req.readyState == 4){
-	    if(req.status == 200){
-		var text = markdown.toHTML(req.responseText);
-		var $el = $(text)
-		$(css).append($el); 
-	    }   
-	    else{
-		document.getElementById(element).innerHTML="Erro:" + req.status + " " + req.statusText;
-	    }   
-	} 
-    }; 
-    req.open("GET", page, true); 
-    req.send(null); 
-}
-
+//
+//Testando com jquery
 $(document).ready(function(){
+
     // Inicializações do sistema
     var d = new Date()
     var s = d.format("dd/m/yy hh:mm:ss");
@@ -55,54 +21,87 @@ $(document).ready(function(){
 	tau: "/* Ciclo Trigonométrico completo */\nvar tau = 2*Math.PI;",
     }
 
+    // Submit automático para
+    // automatizações na linha de comando
     var submit = function(s){
 	var form = $("#terminal").find('form');
         form.find('input[type=text]').val(s);
         form.submit();
+    };
+
+    // Lista de ajuda
+    var capitalize = function(s){
+	var cap = ""
+	for(var c in s){
+	    cap += s[c].toUpperCase()
+	}
+	return cap
     }
+
+    $("#sidebar").css("overflow-y", "scroll");
+
+    $("#menu > input").each(function(i, j){
+	// Carrege todas páginas de ajuda
+	var callback = null;
+	if(i <= 3){
+	    // Para cada botão, mostre um apenas
+	    callback = function(){
+		var id = $(this).attr('id')
+		$.get(capitalize(id)+".md", function(data){
+		    var text = markdown.toHTML(data);
+		    $("#control_container").hide()
+		    $("#help_container").html(text).show()	 
+		});
+	     }
+	}
+	// Lista de comandos
+	else if(i >= 4 && i <= 8){
+	    callback = function(){
+		var id = $(this).attr('id')
+		if(id === "play" && !runtime) submit('wavepot');
+		submit(id);
+	    };
+	}
+	// habilitar os controles
+	else if(i === 9){
+	    callback = function(){
+		$("#help_container").hide()
+		$("#control_container").show();
+	    };
+	}
+	else{
+	    callback = function(){
+		if(!runtime) submit('wavepot')
+		if(!runtime.playing) submit('play')
+		setTimeout(function(){ submit("slider(\"gain\", 0, 100)")}, 1000)
+		setTimeout(function(){ submit("slider(\"car\", 0, 100)")}, 3000)
+		setTimeout(function(){ submit("slider(\"mod\", 0, 100)")}, 5000)
+		setTimeout(function(){ submit("sin 440, gain()")}, 6000)		
+		setTimeout(function(){ submit("play")}, 7000)
+		setTimeout(function(){ submit("gain()* sin 440, sin(110, 1)")}, 20000)
+		setTimeout(function(){ submit("gain()* sin 440, sin(110, car())")}, 30000)
+		setTimeout(function(){ submit("gain()* sin 440+sin(275,1), sin(110, car())")}, 45000)
+		setTimeout(function(){ submit("gain()* sin 440+sin(274, mod()), sin(110, car())")}, 60000)
+	    }
+	}
+
+	$(this).click(callback)
 	
-    $("#about").click(function(){load('ABOUT.md', '.sidebar')})
-    $("#authors").click(function(){load('AUTHORS.md', '.sidebar')})
-    $("#help").click(function(){load('HELP.md', '.sidebar')})
-    $("#tutorials").click(function(){load('TUTORIALS.md', '.sidebar')})
-    $("#play").click(function(){
-	if(!runtime) submit('wavepot')
-	submit('play')
     })
-    $("#stop").click(function(){
-	submit('stop')
-    })
-	
-    $("#reset").click(function(){
-	submit('reset')
-    })
-    $("#record").click(function(){
-	submit('record')
-    })
-    $("#export").click(function(){
-	submit('export')
-    })
-    $("#example").click(function(){
-	submit('wavepot')
-	setTimeout(function(){ submit("slider(\"gain\", 0, 100)")}, 1000)
-	setTimeout(function(){ submit("slider(\"car\", 0, 100)")}, 3000)
-	setTimeout(function(){ submit("slider(\"mod\", 0, 100)")}, 5000)
-	setTimeout(function(){ submit("sin 440, gain()")}, 6000)
-	setTimeout(function(){ submit("play")}, 6500)
-	setTimeout(function(){ submit("gain()* sin(440, 1)")}, 20000)
-	setTimeout(function(){ submit("gain()* sin(440, car())")}, 30000)
-	setTimeout(function(){ submit("gain()* sin(440+sin(330,1), car())")}, 45000)
-	setTimeout(function(){ submit("gain()* sin(440+sin(330, mod()), car())")}, 60000)
-    })
+
+    
+
+
+    // -----------------------
+    // REGISTROS
+    // -----------------------
+    // Registro de módulos
     var register_module = function(string){
 	var parsed = parse(string);
 	environment[parsed.name] = parsed.string
 	return parsed.name
     }
 
-    // -----------------------
-    // REGISTROS
-    // -----------------------
     register_module("def tmod(f, t) t%(1/f)*f # Utilizado para controlar módulos 'saw' e 'tri' [f - frequencia, t-tempo]")
     register_module("def mute() 0 #Zera processador (isso não significa que nada está sendo processado)")
     register_module("def stereo(fn) fn i for i in [0,1] # Separa audio em dois canais [fn - função]");
@@ -127,7 +126,6 @@ $(document).ready(function(){
     // --------------------------
     // CONTROLES
     // --------------------------
-    var show_controls = false
     var control_vars = []
 
     // De https://github.com/processing/p5.js/blob/master/src/math/calculation.js
@@ -158,21 +156,15 @@ $(document).ready(function(){
 	    control_vars.push(name)
 	    runtime.addControl(name, {value: 0})
 	    control_vars.push(name)
-	    $wrapper = jquerySlider($('<div>'+name+'</div>').addClass("GUI").attr('id', name+"_slider"),  min, max)
-	    if(show_controls){
-		$wrapper.hide();
-	    }
-	    else{
-		$wrapper.show();
-	    }
-	    $wrapper.appendTo("#sidebar")
+	    $wrapper = jquerySlider($('<div>'+name+'</div>').attr('id', name+"_slider").addClass("GUI"), min || 0, max || 1024)
+	    $wrapper.appendTo("#control_container")
 	    return {
 		type: 'print',
 		out: register_module("def "+name+"() if controls[\""+name+"\"] then v = controls[\""+name+"\"][\"value\"]; v else new Error name+' not available' #returns a value between "+min+" & "+max+" from '"+name+"' slider ")
 	    }
 	}
 	else{
-	    $wrapper = jquerySlider($('#'+name+'_slider'), min, max)
+	    jquerySlider($('#'+name+'_slider'), min || 0, max || 1024)
 	    return {
 		type: 'print',
 		out: name+' redefined' 
@@ -181,20 +173,6 @@ $(document).ready(function(){
 
 	
     }
-
-    // Pode-se habilitar ou não os controles
-    $("#controls").click(function(){
-	show_controls = !show_controls
-	for(var c in control_vars){
-	    var $el = $("#"+control_vars[c]+"_slider")
-	    if(show_controls){
-		$el.show()
-	    }
-	    else{
-		$el.hide()
-	    }
-	}
-    });
 
     // ---------------------------
     // FIM CONTROLES

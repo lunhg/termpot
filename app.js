@@ -73,15 +73,35 @@ $(document).ready(function(){
 	    callback = function(){
 		if(!runtime) submit('wavepot')
 		if(!runtime.playing) submit('play')
-		setTimeout(function(){ submit("slider(\"gain\", 0, 100)")}, 1000)
-		setTimeout(function(){ submit("slider(\"car\", 0, 100)")}, 3000)
-		setTimeout(function(){ submit("slider(\"mod\", 0, 100)")}, 5000)
-		setTimeout(function(){ submit("sin 440, gain()")}, 6000)		
-		setTimeout(function(){ submit("play")}, 7000)
-		setTimeout(function(){ submit("gain()* sin 440, sin(110, 1)")}, 20000)
-		setTimeout(function(){ submit("gain()* sin 440, sin(110, car())")}, 30000)
-		setTimeout(function(){ submit("gain()* sin 440+sin(275,1), sin(110, car())")}, 45000)
-		setTimeout(function(){ submit("gain()* sin 440+sin(274, mod()), sin(110, car())")}, 60000)
+		setTimeout(function(){ submit("slider(\"out\", 0, 1024)")}, 1000)
+		setTimeout(function(){ submit("def bumbo() perc saw(60, 1), 0.5, 1, 0.01, 0.1")}, 2000);
+		setTimeout(function(){ submit("out() * bumbo()")}, 6000)
+		setTimeout(function(){ submit("slider(\"bmb\", 0, 1024)")}, 8000)
+		setTimeout(function(){ submit("def mixbumbo() bumbo()*bmb()")}, 10000);
+		setTimeout(function(){ submit("out() * mixbumbo()")}, 12000)
+
+		setTimeout(function(){ submit("out() * (mixbumbo() + test())")}, 20000)
+		setTimeout(function(){ submit("slider(\"cx\", 0, 1024)")}, 22000)
+		setTimeout(function(){ submit("def mixcaixa() test()*cx()")}, 24000);
+		setTimeout(function(){ submit("out() * (mixbumbo() + mixcaixa())")}, 26000)
+
+		setTimeout(function(){ submit("slider(\"bss\", 0, 1024)")}, 32000)
+		setTimeout(function(){ submit("def list(b, size) b*10 + ((i*10) % b) for i in [0..size-1]")}, 34000)
+		setTimeout(function(){ submit("def baixo(list) perc saw(seq(list), 1), .75, 1 , 0.21, 0.1")}, 38000)
+		setTimeout(function(){ submit("def mixbaixo() baixo(list(8, 16)) * bss()")}, 42000)
+		setTimeout(function(){ submit("out() *(mixbumbo() + mixcaixa() + mixbaixo())")}, 46000)
+
+		setTimeout(function(){ submit("slider(\"ml\", 0, 1024)")}, 54000)
+		setTimeout(function(){ submit("def mel() perc sin(seq([440, 880, 440, 440, 220, 880]), 1), seq([1.25, 0.5, 2]), 3, 0.25, 2")}, 58000)
+		setTimeout(function(){ submit("def mixmel() mel() * ml()")}, 62000)
+		setTimeout(function(){ submit("out() *(mixbumbo() + mixcaixa() + mixbaixo() + mixmel())")}, 68000)	
+
+		setTimeout(function(){ submit("def mel() perc sin(seq([440, 880, 440, 440, 220, 880, 330, 110]), 1), seq([1.25, 0.5, 2]), 3, 0.25, 2")}, 80000);
+		setTimeout(function(){ submit("out() *(mixbumbo() + mixcaixa() + mixbaixo() + mixmel())")}, 84000)
+		setTimeout(function(){ submit("def mel() perc sin(seq([440, 880, 440, 440, 220, 880, 330, 110]), sin(seq([123, 231, 321]), 1)), seq([1.25, 0.5, 2]), 3, 0.25, 2")}, 84000);
+
+		setTimeout(function(){ submit("out() *(mixbumbo() + mixcaixa() + mixbaixo() + mixmel())")}, 90000)
+		
 	    }
 	}
 
@@ -116,8 +136,11 @@ $(document).ready(function(){
     register_module("def noise(a) a*(Math.random()*2-1) # Retorna um ruído branco [a - amplitude]")
     register_module("def perc(input, head, measure, decay, release) a=nextevent(head,measure,t); b=1/decay; c=1/release; input*Math.exp(-a*b*Math.exp(a*c)) # Cria um envelope percussivo \n e toca em loop")
     register_module("def nextevent(head, measure) (t/head)%measure # Utilizado em perc para controlar sequencia de eventos [head-cabeça de tempo, measure - tamanho do compasso")
-    register_module("def test() perc(sin(440,1,t),1,1,0.5,0.15,t) #Uma simples função de teste")
+    register_module("def test() perc(sin(440,sin(110,sin(22.5+(Math.random()*22.5),1))),1,1,0.15,0.71) #Uma simples função de teste")
     register_module("def seq(a) a[Math.floor(t%a.length)] # Retorna uma sequencia de valores no tempo [a - array de valores]")
+    
+    //http://wavepot.com/stagas/got-some-303
+    register_module("def bpm(n) t *= n/60; tau * t # Configura o BPM (Batidas Por Minuto)")
     // ---------------------------
     // FIM REGISTROS
     // ---------------------------
@@ -133,38 +156,43 @@ $(document).ready(function(){
 	return ((n-start1)/(stop1-start1))*(stop2-start2)+start2;
     };
 
-    // Adiciona um simples slider jquery
-    function jquerySlider($el, min, max){
-	return $el.slider({
-	    range: "min",
-	    animate: true,
-	    orientation: "vertical",
-	    min: parseFloat(min),
-	    max: parseFloat(max),
-	    slide: function(event, ui){
-		var name = $(this).attr('id').split("_")[0]
-		runtime.setControl(name, {value: map(ui.value, min, max, 0, 1) })
-	    }
-	});
-    }
-
     // registra um novo modulo
     // e adiciona uma gui
     function addSlider(name, min, max){
-	$wrapper = null;
+	min = parseFloat(min)
+	max = parseFloat(max)
 	if(control_vars.indexOf(name) === -1){
 	    control_vars.push(name)
 	    runtime.addControl(name, {value: 0})
 	    control_vars.push(name)
-	    $wrapper = jquerySlider($('<div>'+name+'</div>').attr('id', name+"_slider").addClass("GUI"), min || 0, max || 1024)
-	    $wrapper.appendTo("#control_container")
+	    $('<div>'+name+'</div>').attr('id', name+"_slider").addClass("GUI").slider({
+		range: "min",
+		animate: true,
+		orientation: "vertical",
+		min: min,
+		max: max,
+		slide: function(event, ui){
+		    var name = $(this).attr('id').split("_")[0]
+		    runtime.setControl(name, {value: map(ui.value, min, max, 0, 1) })
+		}
+	    }).appendTo("#control_container")
 	    return {
 		type: 'print',
-		out: register_module("def "+name+"() if controls[\""+name+"\"] then v = controls[\""+name+"\"][\"value\"]; v else new Error name+' not available' #returns a value between "+min+" & "+max+" from '"+name+"' slider ")
+		out: register_module("def "+name+"() if controls[\""+name+"\"] then controls[\""+name+"\"][\"value\"] else new Error '"+name+"not available' #returns a value between "+min+" & "+max+" from '"+name+"' slider ")
 	    }
 	}
 	else{
-	    jquerySlider($('#'+name+'_slider'), min || 0, max || 1024)
+	    $('#'+name+'_slider').slider({
+		range: "min",
+		animate: true,
+		orientation: "vertical",
+		min: min,
+		max: max,
+		slide: function(event, ui){
+		    var name = $(this).attr('id').split("_")[0]
+		    runtime.setControl(name, {value: map(ui.value, min, max, 0, 1) })
+		}
+	    });
 	    return {
 		type: 'print',
 		out: name+' redefined' 
@@ -197,6 +225,10 @@ $(document).ready(function(){
             return "audio cleared"
 	}
     }
+
+    // Current: código atual sendo tocado
+    var current = null;
+    var bpm = null;
 
     // Comandos diversos
     $.register_command(
@@ -499,22 +531,12 @@ $(document).ready(function(){
 	    //definido pelo usuário
 	    //assim n precisa ficar escrevendo
 	    //um monte de função
-	    current = args[0].split(" ")[0]
-
-	    // Esta é a função que vai ser o ambiente 'environment'
-	    // concatenado em uma única string
-	    // TODO minificar com ugly.js?
-	    envir=""
-	    for(var v in environment){
-		envir += (environment[v]+"\n");
-	    }
-
-	    //Compile a string cs para js sem escopo
-	    js = CoffeeScript.compile(cs, {bare: true})
+	    //current = args[0].split(" ")[0]
             
 	    //Verifique se o comando dado foi um controle ou audio
-	    var reg = /slider(\(|\s)(\'|\")[a-z]+(\'|\")\,\s?\d\s?\,\s?\d(\)|\s)?/
-	    if(reg.test(cs)){
+	    var slider = /slider(\(|\s)(\'|\")[a-z]+(\'|\")\,\s?\d\s?\,\s?\d(\)|\s)?/
+	    var bpm = /bpm(\(|\s)\d+\)?/
+	    if(slider.test(cs)){
 		var reg1 = /slider\((\'|\")[a-z]+(\'|\")\,\s?\d\s?\,\s?\d\)?/
 		var reg2 = /slider\s(\'|\")[a-z]+(\'|\")\,\s?\d\s?\,\s?\d\s?/
 		var nome = null
@@ -527,10 +549,49 @@ $(document).ready(function(){
 		    max = s[2].split(")")[0]
 		}
 		// TODO arrumar coffeescript
+		else if(reg2.test(cs)){
+		    s =  cs.split(",")
+		    s1 = s[0].split(" ")
+		    nome = s1[1].split("\"")[1].split("\"")[0]
+		    min = s[1]
+		    max = s[2]
+		}
 		return addSlider(nome, min, max)
 	    }
+	    else if(bpm.test(cs)){
+		// Esta é a função que vai ser o ambiente 'environment'
+		// concatenado em uma única string
+		// TODO minificar com ugly.js?
+		envir=""
+		for(var v in environment){
+		    envir += (environment[v]+"\n");
+		}
+
+		bpm = CoffeeScript.compile(cs, {bare: true})
+
+		envir += "var dsp = function(t){\n\t"+bpm+";\n\treturn "+(current || 0)+"\n};";
+            
+		// Descomente se quiser ver tudo: debug
+		//window.console.log(envir);
+		return {
+		    type: 'print',
+		    out: runtime.compile(envir)
+		}
+
+	    }
 	    else{
-		envir += "var dsp = function(t){\n\treturn "+js+"\n};";
+		// Esta é a função que vai ser o ambiente 'environment'
+		// concatenado em uma única string
+		// TODO minificar com ugly.js?
+		envir=""
+		for(var v in environment){
+		    envir += (environment[v]+"\n");
+		}
+
+		//Compile a string cs para js sem escopo
+		current = CoffeeScript.compile(cs, {bare: true})
+
+		envir += "var dsp = function(t){\n\t"+(bpm || "clock(60)")+";\n\treturn "+(current || 0)+"\n};";
             
 		// Descomente se quiser ver tudo: debug
 		//window.console.log(envir);

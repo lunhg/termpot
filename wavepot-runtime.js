@@ -111,7 +111,8 @@ WavepotRuntime.prototype.compile = function(code) {
     try {
 	var _code = "var sampleRate = "+this.context.sampleRate+";\n\n"+
 	    "var t = 0;\n\n"+
-	    "var controls = {};\n"+
+	    "var bpm = 60;\n\n"+
+	    "var controls = {};\n\n"+
 	    "this.set_time = function(time){ t = time};\n" +
 	    "this.set_controls = function(c){ controls = c};\n"+
 	    code + 

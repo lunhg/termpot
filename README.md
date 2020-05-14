@@ -6,8 +6,7 @@
 
 Existem versões:
 
-- [aqui](http://jahpd.github.io/termpot/) e
-- [aqui](http://dcomp.ufsj.edu.br/~fls/termpot/)
+- [aqui](http://lunhg.github.io/termpot/)
 
 # Instalando
 
